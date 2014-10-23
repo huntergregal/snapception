@@ -3,31 +3,29 @@ import re
 import sys
 import uuid
 import requests
+import subprocess
 from ast import literal_eval
-from subprocess import call
 
 conf = {} # populated by given command line arguments via start()
 
 def request(context, flow):
 	request = flow.request
-	if(request.host == "feelinsonice-hrd.appspot.com" and request.path == '/bq/blob'):
-		blobURI = "http://"+request.host+request.path+"?"+request.content
+	x = request.path
+	if(request.host == "feelinsonice-hrd.appspot.com" and x.startswith('/ph/blob', 0, 8)):
+		blobURI = "http://"+request.host+request.path
 		log("Downloading intercepted blob ("+blobURI+")")
 		r = requests.get(blobURI)
-
-		log("Downloaded blob")
-		blobFile = './blob'
+		blobFile = "./blob"
 		b = open(blobFile, 'w+')
 		print >> b, r.content
-
+		log("Downloaded blob")
+		
 		log("Decrypting file...")
 		if(not os.path.exists(os.path.expanduser(conf['snapsDir']))):
 			os.makedirs(os.path.expanduser(conf['snapsDir']))
 		outputFile = os.path.expanduser(conf['snapsDir']) + 'snap_%s' % str(uuid.uuid4())
 		rubyFile = conf['pyDir']+'/decrypt_snap.rb'
-
-		call(['ruby', rubyFile, blobFile, outputFile])
-
+		subprocess.call(['ruby', rubyFile, blobFile, outputFile])
 		log("File decrypted! Your picture is now available.")
 		log("---- Waiting for a Snapchat... ----")
 
